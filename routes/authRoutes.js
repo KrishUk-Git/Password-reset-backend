@@ -6,10 +6,9 @@ const User = require('../models/User');
 
 const router = express.Router();
 
-// Helper for sending email
 async function sendPasswordResetEmail(user, token) {
   const transporter = nodemailer.createTransport({
-    service: 'Gmail', // or your preferred service
+    service: 'Gmail',
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
@@ -30,7 +29,6 @@ async function sendPasswordResetEmail(user, token) {
   await transporter.sendMail(mailOptions);
 }
 
-// ROUTE 0: REGISTER NEW USER
 router.post('/register', async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -46,7 +44,6 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// ROUTE 1: FORGOT PASSWORD
 router.post('/forgot-password', async (req, res) => {
   try {
     const user = await User.findOne({ email: req.body.email });
@@ -67,7 +64,6 @@ router.post('/forgot-password', async (req, res) => {
   }
 });
 
-// ROUTE 2: RESET PASSWORD
 router.post('/reset-password/:token', async (req, res) => {
   try {
     const hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
