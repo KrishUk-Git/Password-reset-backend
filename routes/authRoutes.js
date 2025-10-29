@@ -15,7 +15,7 @@ async function sendPasswordResetEmail(user, token) {
     },
   });
 
-  const resetUrl = `http://localhost:3000/reset-password/${token}`;
+  const resetUrl = `https://passwordresetuk.netlify.app/reset-password/${token}`;
   const mailOptions = {
     to: user.email,
     from: process.env.EMAIL_USER,
@@ -46,6 +46,7 @@ router.post('/register', async (req, res) => {
 
 router.post('/forgot-password', async (req, res) => {
   try {
+    console.log(req.body.email)
     const user = await User.findOne({ email: req.body.email });
     if (!user) {
       return res.status(200).json({ message: 'If a user with that email exists, a reset link has been sent.' });
