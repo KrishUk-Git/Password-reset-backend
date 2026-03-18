@@ -3,12 +3,11 @@ const crypto = require('crypto');
 const sendEmail = require('../utils/sendEmail');
 
 
-// ==============================
-// REGISTER USER
-// ==============================
 exports.registerUser = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    let { email, password } = req.body;
+
+    email = email.trim().toLowerCase();
 
     if (!email || !password) {
       return res.status(400).json({
@@ -30,9 +29,10 @@ exports.registerUser = async (req, res) => {
       });
     }
 
-    // ❌ DO NOT HASH HERE (handled in model)
     const user = new User({ email, password });
     await user.save();
+
+    console.log("✅ User registered:", email);
 
     res.status(201).json({
       message: 'User registered successfully!',
@@ -46,22 +46,18 @@ exports.registerUser = async (req, res) => {
 };
 
 
-// ==============================
-// FORGOT PASSWORD
-// ==============================
 exports.forgotPassword = async (req, res) => {
   try {
-    const { email } = req.body;
+    let { email } = req.body;
 
-    if (!email) {
-      return res.status(400).json({
-        message: 'Email is required.',
-      });
-    }
+    email = email.trim().toLowerCase();
+
+    console.log("📩 Email received:", email);
 
     const user = await User.findOne({ email });
 
-    // Prevent email enumeration attack
+    console.log("🔍 User found:", user);
+
     if (!user) {
       return res.status(200).json({
         message:
@@ -69,16 +65,14 @@ exports.forgotPassword = async (req, res) => {
       });
     }
 
-    // Generate raw reset token
     const resetToken = crypto.randomBytes(32).toString('hex');
 
-    // Hash token before saving to DB
     user.passwordResetToken = crypto
       .createHash('sha256')
       .update(resetToken)
       .digest('hex');
 
-    user.passwordResetExpires = Date.now() + 15 * 60 * 1000; // 15 minutes
+    user.passwordResetExpires = Date.now() + 15 * 60 * 1000;
 
     await user.save();
 
@@ -91,12 +85,17 @@ exports.forgotPassword = async (req, res) => {
       <p>This link will expire in 15 minutes.</p>
     `;
 
+    console.log("📨 Sending email to:", user.email);
+
     await sendEmail(user.email, 'Password Reset Request', message);
+
+    console.log("✅ Reset email sent");
 
     res.status(200).json({
       message:
         'If an account with that email exists, a reset link has been sent.',
     });
+
   } catch (error) {
     console.error('❌ Forgot password error:', error);
     res.status(500).json({
@@ -106,9 +105,6 @@ exports.forgotPassword = async (req, res) => {
 };
 
 
-// ==============================
-// RESET PASSWORD
-// ==============================
 exports.resetPassword = async (req, res) => {
   try {
     const { password } = req.body;
@@ -119,7 +115,6 @@ exports.resetPassword = async (req, res) => {
       });
     }
 
-    // Hash token from URL
     const hashedToken = crypto
       .createHash('sha256')
       .update(req.params.token)
@@ -136,18 +131,18 @@ exports.resetPassword = async (req, res) => {
       });
     }
 
-    // Set new password (will be hashed in model middleware)
     user.password = password;
-
-    // Clear reset fields
     user.passwordResetToken = null;
     user.passwordResetExpires = null;
 
     await user.save();
 
+    console.log("🔑 Password reset successful for:", user.email);
+
     res.status(200).json({
       message: 'Password reset successful!',
     });
+
   } catch (error) {
     console.error('❌ Reset password error:', error);
     res.status(500).json({

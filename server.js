@@ -5,24 +5,24 @@ const connectDB = require('./config/db');
 
 const app = express();
 
-// Connect Database
 connectDB();
 
-// Middleware
 app.use(express.json());
 
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
-    credentials: true,
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true
   })
 );
 
-// Routes
+app.options('*', cors());
+
 app.use('/api/auth', require('./routes/authRoutes'));
 
-// Server
 const PORT = process.env.PORT || 5000;
+
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
 });
